@@ -1,0 +1,1102 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Wayfarer hotel property management API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: property
+  - name: reservations
+  - name: front-desk
+  - name: folios
+  - name: housekeeping
+  - name: revenue
+  - name: reports
+  - name: guest
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /properties/{propertySlug}/summary:
+    get:
+      operationId: getPropertySummary
+      tags: [property]
+      summary: Get the operational summary for a property
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+      responses:
+        "200":
+          description: Property summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PropertySummary"
+
+  /properties/{propertySlug}/activity:
+    get:
+      operationId: getPropertyActivity
+      tags: [property]
+      summary: Get recent property activity
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /properties/{propertySlug}/rooms:
+    get:
+      operationId: listRooms
+      tags: [front-desk]
+      summary: List rooms and current status
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Room list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Room"
+
+  /properties/{propertySlug}/rooms/{roomId}/status:
+    patch:
+      operationId: updateRoomStatus
+      tags: [front-desk]
+      summary: Update a room status
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/RoomId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomStatusUpdate"
+      responses:
+        "200":
+          description: Updated room
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+
+  /properties/{propertySlug}/reservations:
+    get:
+      operationId: listReservations
+      tags: [reservations]
+      summary: Search reservations
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, confirmed, pre_checked_in, in_house, checked_out, cancelled, no_show]
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Reservation list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reservation"
+    post:
+      operationId: createReservation
+      tags: [reservations]
+      summary: Create a reservation using the hold-and-book path
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservationInput"
+      responses:
+        "201":
+          description: Created reservation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+        "409":
+          description: Inventory no longer available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /properties/{propertySlug}/reservations/{reservationId}:
+    get:
+      operationId: getReservation
+      tags: [reservations]
+      summary: Get reservation detail
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/ReservationId"
+      responses:
+        "200":
+          description: Reservation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationDetail"
+        "404":
+          description: Reservation not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateReservation
+      tags: [reservations]
+      summary: Modify reservation details
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/ReservationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservationUpdate"
+      responses:
+        "200":
+          description: Updated reservation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+
+  /properties/{propertySlug}/reservations/{reservationId}/cancel:
+    post:
+      operationId: cancelReservation
+      tags: [reservations]
+      summary: Cancel a reservation
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/ReservationId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservationCancelInput"
+      responses:
+        "200":
+          description: Cancelled reservation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+
+  /properties/{propertySlug}/reservations/{reservationId}/check-in:
+    post:
+      operationId: checkInReservation
+      tags: [front-desk]
+      summary: Check a guest in
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/ReservationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckInInput"
+      responses:
+        "200":
+          description: Checked-in reservation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+
+  /properties/{propertySlug}/reservations/{reservationId}/check-out:
+    post:
+      operationId: checkOutReservation
+      tags: [front-desk]
+      summary: Check a guest out
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/ReservationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckOutInput"
+      responses:
+        "200":
+          description: Checked-out reservation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+
+  /properties/{propertySlug}/reservations/{reservationId}/assign-room:
+    post:
+      operationId: assignReservationRoom
+      tags: [front-desk]
+      summary: Assign a specific room
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/ReservationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomAssignmentInput"
+      responses:
+        "200":
+          description: Reservation with assigned room
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+
+  /properties/{propertySlug}/folios/{folioId}:
+    get:
+      operationId: getFolio
+      tags: [folios]
+      summary: Get a folio ledger
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/FolioId"
+      responses:
+        "200":
+          description: Folio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Folio"
+
+  /properties/{propertySlug}/folios/{folioId}/charges:
+    post:
+      operationId: postFolioCharge
+      tags: [folios]
+      summary: Post a charge to a folio
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/FolioId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FolioChargeInput"
+      responses:
+        "201":
+          description: Updated folio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Folio"
+
+  /properties/{propertySlug}/folios/{folioId}/payments:
+    post:
+      operationId: postFolioPayment
+      tags: [folios]
+      summary: Record a payment against a folio
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/FolioId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FolioPaymentInput"
+      responses:
+        "201":
+          description: Updated folio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Folio"
+
+  /properties/{propertySlug}/housekeeping/tasks:
+    get:
+      operationId: listHousekeepingTasks
+      tags: [housekeeping]
+      summary: List housekeeping tasks
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, dirty, in_progress, inspected, ready]
+      responses:
+        "200":
+          description: Housekeeping tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HousekeepingTask"
+
+  /properties/{propertySlug}/housekeeping/tasks/{taskId}/status:
+    post:
+      operationId: updateHousekeepingTaskStatus
+      tags: [housekeeping]
+      summary: Move a housekeeping task through its workflow
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/TaskId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HousekeepingStatusUpdate"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HousekeepingTask"
+
+  /properties/{propertySlug}/housekeeping/tasks/{taskId}/assign:
+    post:
+      operationId: assignHousekeepingTask
+      tags: [housekeeping]
+      summary: Assign a housekeeping task
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - $ref: "#/components/parameters/TaskId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HousekeepingAssignmentInput"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HousekeepingTask"
+
+  /properties/{propertySlug}/maintenance:
+    get:
+      operationId: listMaintenanceRequests
+      tags: [housekeeping]
+      summary: List maintenance work orders
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+      responses:
+        "200":
+          description: Maintenance requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaintenanceRequest"
+    post:
+      operationId: createMaintenanceRequest
+      tags: [housekeeping]
+      summary: Create a maintenance work order
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaintenanceInput"
+      responses:
+        "201":
+          description: Created work order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceRequest"
+
+  /properties/{propertySlug}/rates/calendar:
+    get:
+      operationId: getRateCalendar
+      tags: [revenue]
+      summary: Get rate and inventory calendar
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 14
+      responses:
+        "200":
+          description: Calendar
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RateCalendarRow"
+    post:
+      operationId: bulkUpdateRates
+      tags: [revenue]
+      summary: Bulk update rate calendar
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RateCalendarUpdate"
+      responses:
+        "200":
+          description: Updated calendar rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RateCalendarRow"
+
+  /properties/{propertySlug}/night-audit/history:
+    get:
+      operationId: listNightAuditRuns
+      tags: [front-desk]
+      summary: List night audit runs
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+      responses:
+        "200":
+          description: Night audit history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NightAuditRun"
+
+  /properties/{propertySlug}/night-audit/run:
+    post:
+      operationId: runNightAudit
+      tags: [front-desk]
+      summary: Run the night audit
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NightAuditInput"
+      responses:
+        "200":
+          description: Completed audit run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NightAuditRun"
+
+  /properties/{propertySlug}/reports/occupancy:
+    get:
+      operationId: getOccupancyReport
+      tags: [reports]
+      summary: Get occupancy and ADR report
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - name: range
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+            default: 30d
+      responses:
+        "200":
+          description: Occupancy report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OccupancyReport"
+
+  /properties/{propertySlug}/reports/revenue:
+    get:
+      operationId: getRevenueReport
+      tags: [reports]
+      summary: Get revenue by channel report
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+      responses:
+        "200":
+          description: Revenue report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueReport"
+
+  /book/{propertySlug}/availability:
+    get:
+      operationId: getPublicAvailability
+      tags: [guest]
+      summary: Search public booking availability
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+        - name: checkIn
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: checkOut
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: guests
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 2
+      responses:
+        "200":
+          description: Public availability
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailableRoomType"
+
+  /book/{propertySlug}/reservations:
+    post:
+      operationId: createPublicReservation
+      tags: [guest]
+      summary: Create a public booking
+      parameters:
+        - $ref: "#/components/parameters/PropertySlug"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicReservationInput"
+      responses:
+        "201":
+          description: Public reservation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicReservationConfirmation"
+        "409":
+          description: Inventory no longer available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  parameters:
+    PropertySlug:
+      name: propertySlug
+      in: path
+      required: true
+      schema:
+        type: string
+    RoomId:
+      name: roomId
+      in: path
+      required: true
+      schema:
+        type: string
+    ReservationId:
+      name: reservationId
+      in: path
+      required: true
+      schema:
+        type: string
+    FolioId:
+      name: folioId
+      in: path
+      required: true
+      schema:
+        type: string
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: ["string", "null"]
+      required: [error]
+    Property:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        city: { type: string }
+        timezone: { type: string }
+        currency: { type: string }
+        businessDate: { type: string, format: date }
+      required: [id, name, slug, city, timezone, currency, businessDate]
+    PropertySummary:
+      type: object
+      properties:
+        property:
+          $ref: "#/components/schemas/Property"
+        occupancyPercent: { type: number }
+        adrCents: { type: integer }
+        revparCents: { type: integer }
+        arrivals: { type: integer }
+        departures: { type: integer }
+        roomsToClean: { type: integer }
+        openBalanceCents: { type: integer }
+        roomStatusCounts:
+          type: object
+          additionalProperties: { type: integer }
+      required: [property, occupancyPercent, adrCents, revparCents, arrivals, departures, roomsToClean, openBalanceCents, roomStatusCounts]
+    ActivityItem:
+      type: object
+      properties:
+        id: { type: string }
+        action: { type: string }
+        description: { type: string }
+        actor: { type: string }
+        occurredAt: { type: string, format: date-time }
+        tone:
+          type: string
+          enum: [neutral, positive, warning, destructive]
+      required: [id, action, description, actor, occurredAt, tone]
+    Room:
+      type: object
+      properties:
+        id: { type: string }
+        number: { type: string }
+        floor: { type: integer }
+        roomType: { type: string }
+        roomTypeId: { type: string }
+        status:
+          type: string
+          enum: [vacant_clean, vacant_dirty, occupied, inspected, out_of_order]
+        reservationId: { type: ["string", "null"] }
+        guestName: { type: ["string", "null"] }
+        stayDates: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+      required: [id, number, floor, roomType, roomTypeId, status, reservationId, guestName, stayDates, notes]
+    RoomStatusUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [vacant_clean, vacant_dirty, occupied, inspected, out_of_order]
+        note: { type: string }
+      required: [status]
+    Guest:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        phone: { type: ["string", "null"] }
+        vip: { type: boolean }
+        stays: { type: integer }
+        preferences:
+          type: array
+          items: { type: string }
+      required: [id, name, email, phone, vip, stays, preferences]
+    Reservation:
+      type: object
+      properties:
+        id: { type: string }
+        confirmationCode: { type: string }
+        guest:
+          $ref: "#/components/schemas/Guest"
+        roomType: { type: string }
+        roomTypeId: { type: string }
+        assignedRoom: { type: ["string", "null"] }
+        checkInDate: { type: string, format: date }
+        checkOutDate: { type: string, format: date }
+        adults: { type: integer }
+        children: { type: integer }
+        source:
+          type: string
+          enum: [direct, ota_booking_com, ota_expedia, ota_airbnb, phone, walk_in]
+        status:
+          type: string
+          enum: [confirmed, pre_checked_in, in_house, checked_out, cancelled, no_show]
+        totalCents: { type: integer }
+        balanceCents: { type: integer }
+        folioId: { type: string }
+        specialRequests: { type: ["string", "null"] }
+      required: [id, confirmationCode, guest, roomType, roomTypeId, assignedRoom, checkInDate, checkOutDate, adults, children, source, status, totalCents, balanceCents, folioId, specialRequests]
+    ReservationDetail:
+      allOf:
+        - $ref: "#/components/schemas/Reservation"
+        - type: object
+          properties:
+            ratePlan: { type: string }
+            nightlyRateCents: { type: integer }
+            taxCents: { type: integer }
+            createdAt: { type: string, format: date-time }
+            notes:
+              type: array
+              items: { type: string }
+          required: [ratePlan, nightlyRateCents, taxCents, createdAt, notes]
+    ReservationInput:
+      type: object
+      properties:
+        guestName: { type: string, minLength: 1 }
+        guestEmail: { type: string, format: email }
+        guestPhone: { type: string }
+        roomTypeId: { type: string }
+        ratePlanId: { type: string }
+        assignedRoomId: { type: ["string", "null"] }
+        checkInDate: { type: string, format: date }
+        checkOutDate: { type: string, format: date }
+        adults: { type: integer, minimum: 1 }
+        children: { type: integer, minimum: 0 }
+        source:
+          type: string
+          enum: [direct, ota_booking_com, ota_expedia, ota_airbnb, phone, walk_in]
+        specialRequests: { type: string }
+        idempotencyKey: { type: string, minLength: 1 }
+      required: [guestName, guestEmail, roomTypeId, ratePlanId, checkInDate, checkOutDate, adults, children, source, idempotencyKey]
+    PublicReservationInput:
+      type: object
+      properties:
+        guestName: { type: string, minLength: 1 }
+        guestEmail: { type: string, format: email }
+        roomTypeId: { type: string }
+        ratePlanId: { type: string }
+        checkInDate: { type: string, format: date }
+        checkOutDate: { type: string, format: date }
+        adults: { type: integer, minimum: 1 }
+        children: { type: integer, minimum: 0 }
+        idempotencyKey: { type: string, minLength: 1 }
+      required: [guestName, guestEmail, roomTypeId, ratePlanId, checkInDate, checkOutDate, adults, children, idempotencyKey]
+    PublicReservationConfirmation:
+      type: object
+      properties:
+        reservationId: { type: string }
+        confirmationCode: { type: string }
+        guestToken: { type: string }
+        totalCents: { type: integer }
+        property:
+          $ref: "#/components/schemas/Property"
+      required: [reservationId, confirmationCode, guestToken, totalCents, property]
+    ReservationUpdate:
+      type: object
+      properties:
+        guestName: { type: string }
+        guestEmail: { type: string, format: email }
+        guestPhone: { type: string }
+        checkInDate: { type: string, format: date }
+        checkOutDate: { type: string, format: date }
+        adults: { type: integer, minimum: 1 }
+        children: { type: integer, minimum: 0 }
+        specialRequests: { type: string }
+    ReservationCancelInput:
+      type: object
+      properties:
+        reason: { type: string }
+    CheckInInput:
+      type: object
+      properties:
+        roomId: { type: string }
+        paymentMethod:
+          type: string
+          enum: [card, cash, authorization, house_account]
+        idVerified: { type: boolean }
+      required: [roomId, paymentMethod, idVerified]
+    CheckOutInput:
+      type: object
+      properties:
+        paymentMethod:
+          type: string
+          enum: [card, cash, house_account]
+        settleBalance: { type: boolean }
+      required: [paymentMethod, settleBalance]
+    RoomAssignmentInput:
+      type: object
+      properties:
+        roomId: { type: string }
+      required: [roomId]
+    Folio:
+      type: object
+      properties:
+        id: { type: string }
+        reservationId: { type: string }
+        status:
+          type: string
+          enum: [open, closed]
+        balanceCents: { type: integer }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FolioLineItem"
+      required: [id, reservationId, status, balanceCents, items]
+    FolioLineItem:
+      type: object
+      properties:
+        id: { type: string }
+        postedAt: { type: string, format: date-time }
+        type:
+          type: string
+          enum: [room_charge, tax, pos_charge, adjustment, payment, refund]
+        description: { type: string }
+        amountCents: { type: integer }
+      required: [id, postedAt, type, description, amountCents]
+    FolioChargeInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [pos_charge, adjustment]
+        description: { type: string, minLength: 1 }
+        amountCents: { type: integer, minimum: 1 }
+      required: [type, description, amountCents]
+    FolioPaymentInput:
+      type: object
+      properties:
+        amountCents: { type: integer, minimum: 1 }
+        method:
+          type: string
+          enum: [card, cash, bank_transfer]
+        stripePaymentIntentId: { type: ["string", "null"] }
+      required: [amountCents, method]
+    HousekeepingTask:
+      type: object
+      properties:
+        id: { type: string }
+        roomId: { type: string }
+        roomNumber: { type: string }
+        roomType: { type: string }
+        status:
+          type: string
+          enum: [dirty, in_progress, inspected, ready]
+        priority:
+          type: string
+          enum: [standard, checkout_today, vip, maintenance]
+        assignedTo: { type: ["string", "null"] }
+        estimatedMinutes: { type: integer }
+        guestNote: { type: ["string", "null"] }
+        updatedAt: { type: string, format: date-time }
+      required: [id, roomId, roomNumber, roomType, status, priority, assignedTo, estimatedMinutes, guestNote, updatedAt]
+    HousekeepingStatusUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [dirty, in_progress, inspected, ready]
+        issue: { type: string }
+      required: [status]
+    HousekeepingAssignmentInput:
+      type: object
+      properties:
+        userId: { type: string }
+      required: [userId]
+    MaintenanceRequest:
+      type: object
+      properties:
+        id: { type: string }
+        roomNumber: { type: ["string", "null"] }
+        description: { type: string }
+        priority:
+          type: string
+          enum: [low, medium, high]
+        status:
+          type: string
+          enum: [open, in_progress, resolved]
+        assignedTo: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+      required: [id, roomNumber, description, priority, status, assignedTo, createdAt]
+    MaintenanceInput:
+      type: object
+      properties:
+        roomId: { type: ["string", "null"] }
+        description: { type: string, minLength: 1 }
+        priority:
+          type: string
+          enum: [low, medium, high]
+      required: [description, priority]
+    RateCalendarRow:
+      type: object
+      properties:
+        roomTypeId: { type: string }
+        roomType: { type: string }
+        ratePlanId: { type: string }
+        ratePlan: { type: string }
+        dates:
+          type: array
+          items:
+            $ref: "#/components/schemas/RateCalendarCell"
+      required: [roomTypeId, roomType, ratePlanId, ratePlan, dates]
+    RateCalendarCell:
+      type: object
+      properties:
+        date: { type: string, format: date }
+        priceCents: { type: integer }
+        available: { type: integer }
+        isClosed: { type: boolean }
+      required: [date, priceCents, available, isClosed]
+    RateCalendarUpdate:
+      type: object
+      properties:
+        roomTypeId: { type: string }
+        ratePlanId: { type: string }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        priceCents: { type: integer, minimum: 0 }
+        isClosed: { type: boolean }
+      required: [roomTypeId, ratePlanId, startDate, endDate]
+    NightAuditRun:
+      type: object
+      properties:
+        id: { type: string }
+        businessDate: { type: string, format: date }
+        status:
+          type: string
+          enum: [in_progress, completed]
+        roomsCharged: { type: integer }
+        taxesPostedCents: { type: integer }
+        paymentsReconciledCents: { type: integer }
+        noShowsFlagged: { type: integer }
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: ["string", "null"], format: date-time }
+      required: [id, businessDate, status, roomsCharged, taxesPostedCents, paymentsReconciledCents, noShowsFlagged, startedAt, completedAt]
+    NightAuditInput:
+      type: object
+      properties:
+        confirmCharges: { type: boolean }
+        confirmReconciliation: { type: boolean }
+      required: [confirmCharges, confirmReconciliation]
+    OccupancyReport:
+      type: object
+      properties:
+        range: { type: string }
+        targetPercent: { type: number }
+        currentPercent: { type: number }
+        adrCents: { type: integer }
+        revparCents: { type: integer }
+        series:
+          type: array
+          items:
+            $ref: "#/components/schemas/OccupancyPoint"
+      required: [range, targetPercent, currentPercent, adrCents, revparCents, series]
+    OccupancyPoint:
+      type: object
+      properties:
+        date: { type: string, format: date }
+        occupancyPercent: { type: number }
+        adrCents: { type: integer }
+        revparCents: { type: integer }
+      required: [date, occupancyPercent, adrCents, revparCents]
+    RevenueReport:
+      type: object
+      properties:
+        totalCents: { type: integer }
+        channels:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenueChannel"
+        daily:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenuePoint"
+      required: [totalCents, channels, daily]
+    RevenueChannel:
+      type: object
+      properties:
+        channel: { type: string }
+        amountCents: { type: integer }
+        percent: { type: number }
+      required: [channel, amountCents, percent]
+    RevenuePoint:
+      type: object
+      properties:
+        date: { type: string, format: date }
+        amountCents: { type: integer }
+      required: [date, amountCents]
+    AvailableRoomType:
+      type: object
+      properties:
+        roomTypeId: { type: string }
+        name: { type: string }
+        description: { type: string }
+        amenities:
+          type: array
+          items: { type: string }
+        maxOccupancy: { type: integer }
+        availableRooms: { type: integer }
+        nightlyRateCents: { type: integer }
+        totalCents: { type: integer }
+        ratePlanId: { type: string }
+        ratePlanName: { type: string }
+      required: [roomTypeId, name, description, amenities, maxOccupancy, availableRooms, nightlyRateCents, totalCents, ratePlanId, ratePlanName]
