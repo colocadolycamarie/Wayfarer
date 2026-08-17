@@ -1,6 +1,6 @@
 {
   "framework": null,
-  "buildCommand": "pnpm --filter @workspace/web run build",
+  "buildCommand": "pnpm run typecheck:libs && pnpm --filter @workspace/web run build",
   "outputDirectory": "apps/web/dist",
   "installCommand": "pnpm install"
 }

@@ -1,13 +1,25 @@
 import express, { type Express } from "express";
 import cors from "cors";
-import pinoHttp from "pino-http";
-import router from "./routes";
-import { logger } from "./lib/logger";
+import pinoHttp, { type Options as PinoHttpOptions } from "pino-http";
+import router from "./routes/index.js";
+import { logger } from "./lib/logger.js";
+
+// pino-http ships CommonJS with no "exports" map. Under most resolution
+// modes the default import above is already the callable function (and
+// that's what actually runs), but strict "nodenext" resolution (used by
+// some build environments, e.g. Vercel's function bundler) mis-infers its
+// type as non-callable. This cast only affects the type-checker, not
+// runtime behavior — pinoHttpLogger is the exact same value as pinoHttp.
+// Options is kept as the real pino-http type so the serializer callbacks
+// below still get properly typed req/res parameters.
+const pinoHttpLogger = pinoHttp as unknown as (
+  opts: PinoHttpOptions,
+) => ReturnType<typeof express>;
 
 const app: Express = express();
 
 app.use(
-  pinoHttp({
+  pinoHttpLogger({
     logger,
     serializers: {
       req(req) {

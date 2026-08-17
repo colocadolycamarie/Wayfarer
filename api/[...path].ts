@@ -7,4 +7,4 @@
 // This file is Vercel-specific. For a traditional always-on host
 // (Railway, Render, Fly, plain Node), use apps/server/src/index.ts instead,
 // which wraps the same Express app with app.listen().
-export { default } from "../apps/server/src/app";
+export { default } from "../apps/server/src/app.js";
