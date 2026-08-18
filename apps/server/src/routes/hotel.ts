@@ -1,4 +1,4 @@
-﻿import { Router, type Request, type Response, type NextFunction } from "express";
+﻿import { Router, type Request, type RequestHandler, type ErrorRequestHandler } from "express";
 import type { z } from "zod";
 import {
   AssignHousekeepingTaskBody,
@@ -56,8 +56,8 @@ function param(req: Request, name: string): string {
   return value;
 }
 
-function wrap(handler: (req: Request, res: Response) => Promise<void>) {
-  return (req: Request, res: Response, next: NextFunction) => {
+function wrap(handler: (req: Request, res: Parameters<RequestHandler>[1]) => Promise<void>): RequestHandler {
+  return (req, res, next) => {
     handler(req, res).catch(next);
   };
 }
@@ -422,12 +422,14 @@ router.post(
 // Error handling â€” translate domain errors to HTTP status codes
 // ---------------------------------------------------------------------------
 
-router.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
+const errorHandler: ErrorRequestHandler = (error, _req, res, next) => {
   if (res.headersSent) return next(error);
   if (error instanceof NotFoundError) return res.status(404).json({ error: error.message || "Not found" });
   if (error instanceof ConflictError) return res.status(409).json({ error: error.message || "Conflict" });
   if (error instanceof ValidationError) return res.status(400).json({ error: error.message || "Validation failed" });
   next(error);
-});
+};
+
+router.use(errorHandler);
 
 export default router;
