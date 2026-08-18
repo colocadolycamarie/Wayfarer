@@ -40,3 +40,4 @@ overrides:
   # drizzle-kit bundles an older, vulnerable esbuild internally; force a patched version
   "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0"
   esbuild: "0.27.3"
+  drizzle-orm: "0.45.2"
