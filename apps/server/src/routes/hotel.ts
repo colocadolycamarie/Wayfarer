@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
+﻿import { Router, type Request, type Response, type NextFunction } from "express";
 import type { z } from "zod";
 import {
   AssignHousekeepingTaskBody,
@@ -24,7 +24,7 @@ import {
 import * as hotel from "../services/hotel-service.js";
 import { ConflictError, NotFoundError, ValidationError } from "../services/hotel-service.js";
 
-const router: IRouter = Router();
+const router = Router();
 
 // ---------------------------------------------------------------------------
 // Request parsing helpers
@@ -419,7 +419,7 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
-// Error handling — translate domain errors to HTTP status codes
+// Error handling â€” translate domain errors to HTTP status codes
 // ---------------------------------------------------------------------------
 
 router.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
