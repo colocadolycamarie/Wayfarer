@@ -1,0 +1,12 @@
+﻿{
+  "extends": "../apps/server/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "..",
+    "typeRoots": [
+      "../apps/server/node_modules/@types",
+      "../node_modules/@types"
+    ]
+  },
+  "include": ["./**/*.ts", "../apps/server/src/**/*.ts"]
+}
