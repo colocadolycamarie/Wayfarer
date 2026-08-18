@@ -1,6 +1,13 @@
-{
+﻿{
   "extends": "./tsconfig.base.json",
   "compileOnSave": false,
+  "compilerOptions": {
+    "types": ["node"],
+    "typeRoots": [
+      "./apps/server/node_modules/@types",
+      "./node_modules/@types"
+    ]
+  },
   "files": [],
   "references": [
     { "path": "./packages/db" },
