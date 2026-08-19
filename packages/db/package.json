@@ -13,7 +13,7 @@
     "seed": "tsx ./src/seed.ts"
   },
   "dependencies": {
-    "drizzle-orm": "catalog:",
+    "drizzle-orm": "0.44.6",
     "drizzle-zod": "^0.8.3",
     "pg": "^8.22.0",
     "zod": "catalog:"
