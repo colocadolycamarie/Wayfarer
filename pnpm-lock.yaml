@@ -55,9 +55,6 @@ catalogs:
       specifier: ^3.25.76
       version: 3.25.76
 
-overrides:
-  drizzle-orm: 0.44.6
-
 importers:
 
   .:
@@ -2441,7 +2438,7 @@ packages:
   drizzle-zod@0.8.3:
     resolution: {integrity: sha512-66yVOuvGhKJnTdiqj1/Xaaz9/qzOdRJADpDa68enqS6g3t0kpNkwNYjUuaeXgZfO/UWuIM9HIhSlJ6C5ZraMww==}
     peerDependencies:
-      drizzle-orm: 0.44.6
+      drizzle-orm: '>=0.36.0'
       zod: ^3.25.0 || ^4.0.0
 
   dunder-proto@1.0.1:
