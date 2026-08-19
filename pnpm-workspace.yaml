@@ -16,7 +16,7 @@ catalog:
   '@vitejs/plugin-react': ^5.0.4
   class-variance-authority: ^0.7.1
   clsx: ^2.1.1
-  drizzle-orm: ^0.45.2
+  drizzle-orm: 0.44.6
   lucide-react: ^0.545.0
   # Pinned exactly: expo (mobile client, if added later) requires this exact version
   react: 19.1.0
@@ -36,5 +36,3 @@ onlyBuiltDependencies:
   - msw
   - unrs-resolver
 
-overrides:
-  drizzle-orm: 0.44.6
