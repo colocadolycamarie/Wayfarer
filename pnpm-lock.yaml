@@ -306,9 +306,6 @@ importers:
 
   packages/db:
     dependencies:
-      drizzle-orm:
-        specifier: 0.44.6
-        version: 0.44.6(@types/pg@8.21.0)(pg@8.23.0)
       drizzle-zod:
         specifier: ^0.8.3
         version: 0.8.3(drizzle-orm@0.44.6(@types/pg@8.21.0)(pg@8.23.0))(zod@3.25.76)

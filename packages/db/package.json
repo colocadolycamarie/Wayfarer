@@ -13,7 +13,6 @@
     "seed": "tsx ./src/seed.ts"
   },
   "dependencies": {
-    "drizzle-orm": "0.44.6",
     "drizzle-zod": "^0.8.3",
     "pg": "^8.22.0",
     "zod": "catalog:"
@@ -23,5 +22,8 @@
     "@types/pg": "^8.20.0",
     "drizzle-kit": "^0.31.10",
     "tsx": "catalog:"
+  },
+  "peerDependencies": {
+    "drizzle-orm": "0.44.6"
   }
 }
