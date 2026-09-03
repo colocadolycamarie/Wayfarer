@@ -36,3 +36,6 @@ onlyBuiltDependencies:
   - msw
   - unrs-resolver
 
+
+overrides:
+  drizzle-orm: "0.44.6"
