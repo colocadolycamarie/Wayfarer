@@ -1,4 +1,4 @@
-export * from "./generated/api";
+export * from "./generated/api.js";
 // Note: ./generated/types re-exports per-parameter TS types (e.g. path params)
 // that collide by name with the runtime zod schemas above in a few endpoints.
 // Nothing in this workspace currently needs those types directly — everything

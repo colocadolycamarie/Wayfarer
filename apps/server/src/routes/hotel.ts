@@ -1,4 +1,5 @@
-import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
+﻿import { Router, type Request, type RequestHandler, type ErrorRequestHandler } from "express";
+import type { z } from "zod";
 import {
   AssignHousekeepingTaskBody,
   AssignReservationRoomBody,
@@ -20,26 +21,26 @@ import {
   UpdateReservationBody,
   UpdateRoomStatusBody,
 } from "@workspace/api-zod";
-import * as hotel from "../services/hotel-service";
-import { ConflictError, NotFoundError, ValidationError } from "../services/hotel-service";
+import * as hotel from "../services/hotel-service.js";
+import { ConflictError, NotFoundError, ValidationError } from "../services/hotel-service.js";
 
-const router: IRouter = Router();
+const router = Router();
 
 // ---------------------------------------------------------------------------
 // Request parsing helpers
 // ---------------------------------------------------------------------------
 
-function parseBody<T>(schema: { safeParse: (input: unknown) => { success: boolean; data?: T; error?: unknown } }, req: Request): T {
+function parseBody<S extends z.ZodTypeAny>(schema: S, req: Request): z.infer<S> {
   const parsed = schema.safeParse(req.body);
-  if (!parsed.success || parsed.data === undefined) {
+  if (!parsed.success) {
     throw new ValidationError("Request validation failed");
   }
   return parsed.data;
 }
 
-function parseQuery<T>(schema: { safeParse: (input: unknown) => { success: boolean; data?: T; error?: unknown } }, req: Request): T {
+function parseQuery<S extends z.ZodTypeAny>(schema: S, req: Request): z.infer<S> {
   const parsed = schema.safeParse(req.query);
-  if (!parsed.success || parsed.data === undefined) {
+  if (!parsed.success) {
     throw new ValidationError("Query validation failed");
   }
   return parsed.data;
@@ -55,8 +56,8 @@ function param(req: Request, name: string): string {
   return value;
 }
 
-function wrap(handler: (req: Request, res: Response) => Promise<void>) {
-  return (req: Request, res: Response, next: NextFunction) => {
+function wrap(handler: (req: Request, res: Parameters<RequestHandler>[1]) => Promise<void>): RequestHandler {
+  return (req, res, next) => {
     handler(req, res).catch(next);
   };
 }
@@ -129,10 +130,19 @@ router.post(
     const { reservation, created } = await hotel.createReservation(
       property,
       {
-        ...body,
+        guestName: body.guestName,
+        guestEmail: body.guestEmail,
+        guestPhone: body.guestPhone,
+        roomTypeId: body.roomTypeId,
+        ratePlanId: body.ratePlanId,
+        assignedRoomId: body.assignedRoomId,
         checkInDate: asDateString(body.checkInDate),
         checkOutDate: asDateString(body.checkOutDate),
-        assignedRoomId: body.assignedRoomId,
+        adults: body.adults,
+        children: body.children,
+        source: body.source,
+        specialRequests: body.specialRequests,
+        idempotencyKey: body.idempotencyKey,
       },
       false,
     );
@@ -298,9 +308,12 @@ router.post(
     const body = parseBody(BulkUpdateRatesBody, req);
     res.json(
       await hotel.bulkUpdateRates(property, {
-        ...body,
+        roomTypeId: body.roomTypeId,
+        ratePlanId: body.ratePlanId,
         startDate: asDateString(body.startDate),
         endDate: asDateString(body.endDate),
+        priceCents: body.priceCents,
+        isClosed: body.isClosed,
       }),
     );
   }),
@@ -374,10 +387,16 @@ router.post(
     const { reservation, created, guestAccessToken } = await hotel.createReservation(
       property,
       {
-        ...body,
+        guestName: body.guestName,
+        guestEmail: body.guestEmail,
+        roomTypeId: body.roomTypeId,
+        ratePlanId: body.ratePlanId,
         checkInDate: asDateString(body.checkInDate),
         checkOutDate: asDateString(body.checkOutDate),
+        adults: body.adults,
+        children: body.children,
         source: "direct",
+        idempotencyKey: body.idempotencyKey,
       },
       true,
     );
@@ -400,15 +419,17 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
-// Error handling — translate domain errors to HTTP status codes
+// Error handling â€” translate domain errors to HTTP status codes
 // ---------------------------------------------------------------------------
 
-router.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
+const errorHandler: ErrorRequestHandler = (error, _req, res, next) => {
   if (res.headersSent) return next(error);
   if (error instanceof NotFoundError) return res.status(404).json({ error: error.message || "Not found" });
   if (error instanceof ConflictError) return res.status(409).json({ error: error.message || "Conflict" });
   if (error instanceof ValidationError) return res.status(400).json({ error: error.message || "Validation failed" });
   next(error);
-});
+};
+
+router.use(errorHandler);
 
 export default router;

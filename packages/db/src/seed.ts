@@ -7,7 +7,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { db, pool } from "./index";
+import { db, pool } from "./index.js";
 import {
   folioLineItems,
   folios,
