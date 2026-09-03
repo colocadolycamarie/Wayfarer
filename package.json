@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
-  "pnpm": { "overrides": { "drizzle-orm": "0.44.6" } }, "packageManager": "pnpm@X.Y.Z",
+  "pnpm": { "overrides": { "drizzle-orm": "0.44.6" } }, "packageManager": "pnpm@11.21.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
@@ -15,4 +15,5 @@
     "typescript": "~5.9.3"
   }
 }
+
 
