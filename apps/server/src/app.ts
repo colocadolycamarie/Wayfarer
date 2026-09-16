@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import cors from "cors";
 import pinoHttp, { type Options as PinoHttpOptions } from "pino-http";
 import router from "./routes/index.js";

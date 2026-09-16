@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import healthRouter from "./health.js";
 import hotelRouter from "./hotel.js";
 
