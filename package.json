@@ -1,8 +1,9 @@
-{
+﻿{
   "name": "wayfarer",
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
+  "type": "module",
   "pnpm": { "overrides": { "drizzle-orm": "0.44.6" } }, "packageManager": "pnpm@11.21.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
@@ -15,5 +16,6 @@
     "typescript": "~5.9.3"
   }
 }
+
 
 
